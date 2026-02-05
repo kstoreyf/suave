@@ -83,7 +83,8 @@ def benchmark_theory_threads_all(numpart_frac=[0.001, 0.005, 0.01, 0.05, 0.1, 0.
                                  keys=None,
                                  isa=None,
                                  proj_dict=None,
-                                 nbins=20):
+                                 nbins=20,
+                                 rmax=84.0):
 
     from Corrfunc.theory import DD, DDrppi, wp, xi, DDsmu
     allkeys = ['DD', 'DDrppi',
@@ -113,7 +114,7 @@ def benchmark_theory_threads_all(numpart_frac=[0.001, 0.005, 0.01, 0.05, 0.1, 0.
     allx, ally, allz = read_catalog()
 
     rmin = 0.1
-    rmax = 84.0
+    #rmax = 84.0
     bins = np.logspace(np.log10(rmin),
                        np.log10(rmax),
                        nbins)
@@ -124,7 +125,7 @@ def benchmark_theory_threads_all(numpart_frac=[0.001, 0.005, 0.01, 0.05, 0.1, 0.
     autocorr = 1
     boxsize = 420.0
     #nthreads = max_threads
-    nthreads = 1
+    nthreads = 4
     print(max_threads)
 
     proj_types = np.array(list(proj_dict.keys()))
@@ -494,16 +495,25 @@ def benchmark_mocks_threads_all(numpart_frac=[0.001, 0.005, 0.01, 0.05, 0.1, 0.2
 
 if len(sys.argv) == 1:
     print("Running theory benchmarks")
-    savetag = '_max0.1'
+    savetag = '_max0.01_piece'
     #numpart_frac=[0.001, 0.005, 0.01, 0.05, 0.1]
-    numpart_frac=np.logspace(np.log10(0.0001), np.log10(0.06), 6)
+    #numpart_frac=np.logspace(np.log10(0.0001), np.log10(1), 10)
+    #numpart_frac=np.logspace(np.log10(0.0001), np.log10(0.31622777), 8)
+    #numpart_frac=np.logspace(np.log10(0.0001), np.log10(0.1), 7)
+    numpart_frac=np.logspace(np.log10(0.0001), np.log10(0.01), 3)
+    #numpart_frac =[0.04]
     keys=['DDsmu']
     isa=['fallback', 'avx']
-    nbins = 20
+    nbins = 10
+    rmax = 84.
+    #rmax = 200.0
+    #rmax = 1
+    #savetag = f'_n0.04_rmax{rmax}'
     proj_dict = {#'None': {'ncomponents': None, 'projfn': None},
-                 'tophat': {'ncomponents': nbins, 'projfn': None}
+                 #'tophat': {'ncomponents': nbins, 'projfn': None}
+                 'piecewise': {'ncomponents': nbins, 'projfn': None}
                 }
-    keys, isa, runtimes, proj_types = benchmark_theory_threads_all(numpart_frac=numpart_frac, keys=keys, isa=isa, nrepeats=3, proj_dict=proj_dict, nbins=9)
+    keys, isa, runtimes, proj_types = benchmark_theory_threads_all(numpart_frac=numpart_frac, keys=keys, isa=isa, nrepeats=3, proj_dict=proj_dict, nbins=nbins, rmax=rmax)
     np.savez(f'../output/theory_scaling_numpart{savetag}.npz', keys=keys, isa=isa,
              runtimes=runtimes, proj_types=proj_types)
     print("Theory: runtimes = {0}".format(runtimes))

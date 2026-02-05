@@ -74,18 +74,3 @@ int trr_analytic(double rmin, double rmax, int nd, double volume, int ncomponent
                     proj_method, nsbins, (double *) sbins, projfn);
     }
 }
-
-int get_proj_func_by_method_avx(const proj_method_t method, size_t element_size)
-{
-    if( ! (element_size == sizeof(float) || element_size == sizeof(double))){
-        fprintf(stderr,"ERROR: In %s> Can only handle doubles or floats. Got an array of size = %zu\n",
-                __FUNCTION__, element_size);
-        return EXIT_FAILURE;
-    }
-
-    if(element_size == sizeof(float)) {
-        return get_proj_func_by_method_avx_float(method);
-    } else {
-        return get_proj_func_by_method_avx_double(method);
-    }
-}

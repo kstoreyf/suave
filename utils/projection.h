@@ -22,5 +22,3 @@ int evaluate_xi(int ncomponents, void *amps, int nsvals, void *svals, void *xi, 
 int trr_analytic(double rmin, double rmax, int nd, double volume, int ncomponents, 
         void *rr, void *trr, proj_method_t proj_method, 
         size_t element_size, int nsbins, void *sbins,  char *projfn);
-
-int get_proj_func_by_method_avx(const proj_method_t method, size_t element_size);

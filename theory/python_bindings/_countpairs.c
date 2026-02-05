@@ -2421,6 +2421,7 @@ static PyObject *countpairs_countpairs_s_mu(PyObject *self, PyObject *args, PyOb
 
     // If AVX version of kernel not implemented, use fallback kernel
     if (! is_kernel_avx(proj_method)){
+        printf("falling back\n");
         options.instruction_set = FALLBACK;
     }
 

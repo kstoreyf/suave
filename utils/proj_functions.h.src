@@ -66,6 +66,8 @@ void gradient_DOUBLE(const proj_struct_DOUBLE *projdata, DOUBLE *u, DOUBLE s, DO
 
 void tophat_avx_DOUBLE(const proj_struct_DOUBLE *projdata, DOUBLE *u, DOUBLE *T, AVX_FLOATS s, AVX_FLOATS sqr_s, const pair_struct_DOUBLE *pair);
 
+void piecewise_avx_DOUBLE(const proj_struct_DOUBLE *projdata, DOUBLE *u, DOUBLE *T, AVX_FLOATS s, AVX_FLOATS sqr_s, const pair_struct_DOUBLE *pair);
+
 //////////////////////////////////
 // Utility functions
 //////////////////////////////////

@@ -12,23 +12,32 @@ print(Corrfunc.__version__)
 def main():
 
     savetag = ''
-    proj_type = 'tophat'
-    ncomponents = 20
-    #r_edges = np.linspace(10., 100., ncomponents+1)
-    rmin = 0.1
-    rmax = 84.0
-    r_edges = np.logspace(np.log10(rmin),
-                       np.log10(rmax),
-                       ncomponents)
+    #proj_type = 'tophat'
+    proj_type = 'piecewise'
+    #ncomponents = 20
+    ncomponents = 3
+    r_edges = np.linspace(10., 100., ncomponents+1)
+    #rmin = 0.1
+    #rmax = 84.0
+    #r_edges = np.logspace(np.log10(rmin),
+    #                   np.log10(rmax),
+    #                   ncomponents)
     proj_dict = {'tophat': {'ncomponents': ncomponents,
                             'proj_func': tophat_orig,
                             'proj_fn': None,
                             'args':[r_edges],
                             'kwargs':{}
-                            }}
+                            },
+                 'piecewise': {'ncomponents': ncomponents,
+                            'proj_func': None,
+                            'proj_fn': None,
+                            'args':[r_edges],
+                            'kwargs':{}
+                            } 
+                 }
 
     proj = proj_dict[proj_type]
-    frac = 0.01
+    frac = 0.0001
     seed = 42
     allx, ally, allz = read_catalog()
     N = int(frac * len(allx))
@@ -72,31 +81,31 @@ def main():
     mumax = 1.0
     nmubins = 1
     s = time.time()
-    _, v_dd, T_dd, a = DDsmu(1, nthreads, r_edges, mumax, nmubins, x, y, z, 
+    _, v_dd, T_dd = DDsmu(1, nthreads, r_edges, mumax, nmubins, x, y, z, 
                 proj_type=proj_type, ncomponents=proj['ncomponents'], projfn=proj['proj_fn'], periodic=periodic,
-                isa='avx',  c_api_timer=True)
+                isa='avx')#, c_api_timer=True)
     T_dd = T_dd.reshape((ncomponents, ncomponents)) #make code output it like this?! or maybe i didn't because it makes it easier to pass directly to compute_amps, etc
     e = time.time()
     print(v_dd)
     print(T_dd)
-    print(a)
+    #print(a)
     print("suave AVX time time:", e-s, 's')
 
     ### Corrfunc/suave test
     
     print('suave regular')
-    nthreads = 1
-    mumax = 1.0
-    nmubins = 1
+    #nthreads = 1
+    #mumax = 1.0
+    #nmubins = 1
     s = time.time()
-    _, v_dd, T_dd, a = DDsmu(1, nthreads, r_edges, mumax, nmubins, x, y, z,
+    _, v_dd, T_dd = DDsmu(1, nthreads, r_edges, mumax, nmubins, x, y, z,
                 proj_type=proj_type, ncomponents=proj['ncomponents'], projfn=proj['proj_fn'], periodic=periodic,
-                isa='fallback', c_api_timer=True)
+                isa='fallback')#, c_api_timer=True)
     T_dd = T_dd.reshape((ncomponents, ncomponents)) #make code output it like this?! or maybe i didn't because it makes it easier to pass directly to compute_amps, etc
     e = time.time()
     print(v_dd)
     print(T_dd)
-    print(a)
+    #print(a)
     print("suave regular time:", e-s, 's')
 
     np.save(f'../output/suave_full_{proj_type}.npy', [v_dd, T_dd, proj_type, proj])

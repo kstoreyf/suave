@@ -135,6 +135,65 @@ void piecewise_DOUBLE(const proj_struct_DOUBLE *projdata, DOUBLE *u, DOUBLE s, D
     }
 }
 
+void piecewise_avx_DOUBLE(const proj_struct_DOUBLE *projdata, DOUBLE *u, DOUBLE *T, AVX_FLOATS s, AVX_FLOATS sqr_s, const pair_struct_DOUBLE *pair){
+    (void) sqr_s;//to suppress the unused variable warning
+
+    int need_weightavg = projdata->need_weightavg;
+    const int ncomponents = projdata->ncomponents;
+    AVX_FLOATS u_arr[ncomponents];
+    // +1 because supp_sqr is edges, not bins
+    AVX_FLOATS m_supp[ncomponents+1];
+    for(int i=0;i<ncomponents+1;i++) {
+        m_supp[i] = AVX_SET_FLOAT(projdata->supp[i]);
+    }
+    const AVX_FLOATS ones = AVX_SET_FLOAT(1);
+    const AVX_FLOATS zeros = AVX_SETZERO_FLOAT();
+    AVX_FLOATS m_mask_left;
+    //printf("pair\n");
+    //for (int k=projdata->ncomponents-1;k>=0;k--){
+    for (int k=0;k<projdata->ncomponents;k++){
+
+        //DOUBLE peak = 0.5*(projdata->supp[p] + projdata->supp[p+1]);
+        const AVX_FLOATS peak = AVX_MULTIPLY_FLOATS(AVX_SET_FLOAT(0.5), AVX_ADD_FLOATS(m_supp[k], m_supp[k+1]));
+
+        //DOUBLE binwidth = projdata->supp[p+1] - projdata->supp[p];
+        const AVX_FLOATS binwidth = AVX_SUBTRACT_FLOATS(m_supp[k+1], m_supp[k]);
+
+        //DOUBLE val = 1.0 - (1.0/binwidth) * FABS(s - peak);
+        const AVX_FLOATS sdist = AVX_ABS_FLOAT(AVX_SUBTRACT_FLOATS(s, peak)); 
+        const AVX_FLOATS val = AVX_SUBTRACT_FLOATS(ones, AVX_MULTIPLY_FLOATS(AVX_DIVIDE_FLOATS(ones, binwidth), sdist));
+
+        // avx_print(s);
+        // avx_print(m_supp[k]);
+        // avx_print(m_supp[k+1]);
+        // avx_print(val);
+        const AVX_FLOATS m_negative = AVX_COMPARE_FLOATS(val, zeros,_CMP_LT_OQ);
+        // where mask 0, first; where mask 1, second
+        // where val < zero, zero; where val > 0, val
+        u_arr[k] = AVX_BLEND_FLOATS_WITH_MASK(val,zeros,m_negative);
+
+        // where mask 0, first; where mask 1, second
+        // where val < zero, zero; where val > 0, val
+        u_arr[k] = AVX_BLEND_FLOATS_WITH_MASK(val,zeros,m_negative);
+
+        //const AVX_FLOATS m_bad = AVX_COMPARE_FLOATS(val, AVX_SET_FLOAT(0.5),_CMP_EQ_OQ);
+
+        if (need_weightavg) {
+            u_arr[k] *= pair->weights0[0].a;
+        }
+        //avx_print(u_arr[k]);
+    } 
+
+    DOUBLE Tval;
+    for (int k1=0;k1<projdata->ncomponents;k1++){
+        u[k1] = avx_hsum_float(u_arr[k1]);
+        for (int k2=k1;k2<projdata->ncomponents;k2++){
+            Tval = avx_hsum_float(AVX_MULTIPLY_FLOATS(u_arr[k1], u_arr[k2]));
+            T[k1*ncomponents+k2] = Tval;
+            T[k2*ncomponents+k1] = Tval;
+        }
+    }
+}
 
 void gaussian_kernel_DOUBLE(const proj_struct_DOUBLE *projdata, DOUBLE *u, DOUBLE s, DOUBLE sqr_s, const pair_struct_DOUBLE *pair){
     (void) sqr_s;//to suppress the unused variable warning
@@ -279,6 +338,8 @@ proj_func_t_avx_DOUBLE get_proj_func_by_method_avx_DOUBLE(const proj_method_t me
     switch(method){
         case TOPHAT:
             return &tophat_avx_DOUBLE;
+        case PIECEWISE:
+            return &piecewise_avx_DOUBLE;
         default:
         case NONEPROJ:
             return NULL;
